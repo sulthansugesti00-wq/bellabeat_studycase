@@ -36,12 +36,12 @@ master_engage_raw <- c(
   lapply(read_csv) %>%
   bind_rows()
 
-# cleaning ----------------------------------------------------------------
+# cleaning activity and engage----------------------------------------------------------------
 
 ## Master table for activity and engage
 glimpse(master_act_engage_raw)
 
-# Adding day and formatting date time & cleaning name consistency
+### Adding day and formatting date time & cleaning name consistency
 master_act_engage <- master_act_engage_raw %>%
   mutate(
     ActivityHour = if (is.character(ActivityHour)) mdy_hms(ActivityHour) else ActivityHour,
@@ -52,17 +52,38 @@ master_act_engage <- master_act_engage_raw %>%
 clean_names() %>% 
   distinct()
   
-# Easily find NA's (NA's will be ignored)
+### Easily find NA's (NA's will be ignored)
 summary(master_act_engage)
-# Unique ID
+
+### Unique ID |35
 master_act_engage %>% count(id, sort = TRUE)
-#Last check glimpse
+n_distinct(master_activity$id)
+
+###Last check glimpse
 glimpse(master_act_engage)
 
 
-## Master table for activity
+# cleaning activity -------------------------------------------------------
 glimpse(master_activity_raw)
 
+### adding weekday format, changing date chr to dttm and adding ordinal weekday | Using if else to make it safe for re-run code
+master_activity <- master_activity_raw %>% 
+  mutate(
+    date = if (is.character(ActivityDate)) mdy(ActivityDate) else ActivityDate,
+    weekday = wday(date, label = TRUE, abbr = FALSE)
+  ) %>% 
+  clean_names() %>% 
+  distinct()
 
-## Master table for engage
+### Checking NA's | No NA's appeared
+summary(master_activity)
+colSums(is.na(master_activity))
+
+### Unique ID | 35
+master_activity %>% count(id, sort = TRUE)
+n_distinct(master_activity$id)
+
+# cleaning engage ---------------------------------------------------------
 glimpse(master_engage_raw)
+
+start cleaning here 1 table
