@@ -143,4 +143,27 @@ km.cluster <- km.out$cluster
 rownames(data.scale) <- paste(formula$id)
 fviz_cluster(list(data =data.scale, cluster=km.cluster))
 
-# TODO report
+
+# cluster bar plot --------------------------------------------------------
+
+# combining id with cluster so i can join with data (master_activity-analysis)
+cluster_id <- data.frame(
+  id = unique(formula$id),
+  cluster = km.cluster
+)
+
+master_clustered <- cluster_id %>% 
+  left_join(master_activity_analysis ,by = "id")
+
+cluster_graph <- master_clustered %>% 
+  group_by(cluster) %>% 
+  summarize(
+    across(where(is.numeric), \(x) mean(x, na.rm = TRUE))
+  )
+
+
+cluster_long <- cluster_graph %>%
+  select(-id) %>%
+  pivot_longer(-cluster, names_to = "metric", values_to = "avg")
+
+# TODO rough sketch bar plot cluster & change cluster avg total to daily avg, process calender heatmap criterion
