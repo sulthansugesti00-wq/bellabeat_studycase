@@ -11,6 +11,7 @@ library(lubridate)
 library(snakecase)
 library(janitor)
 library(factoextra)
+library (ggplot2)
 
 
 # creating master table ---------------------------------------------------
@@ -138,10 +139,23 @@ fviz_nbclust(data.scale, kmeans, method = "wss") + labs(subtitle = "Elbow plot")
 km.out <- kmeans(data.scale, centers = 3, nstart = 100)
 print(km.out)
 
+# Naming cluster
+cluster_label <- c(
+  "1" = "Consistent High activity",
+  "2" = "Inconsistent User",
+  "3" = "Consistent Low activity"
+)
+
+km.cluster <- cluster_label[as.character(km.out$cluster)]
+
 # k means visual
 km.cluster <- km.out$cluster
 rownames(data.scale) <- paste(formula$id)
 fviz_cluster(list(data =data.scale, cluster=km.cluster))
+
+# cluster 1: Exercise regularly and stable, habit formed #E41A1C
+# cluster 2: inconsistent user, high and low intensity, lots of zero day #4DAF4A
+# cluster 3: Consistent low activity #377EB8
 
 
 # cluster bar plot --------------------------------------------------------
@@ -155,15 +169,48 @@ cluster_id <- data.frame(
 master_clustered <- cluster_id %>% 
   left_join(master_activity_analysis ,by = "id")
 
-cluster_graph <- master_clustered %>% 
+user_avg <- master_clustered %>% 
+  group_by(id, cluster) %>% 
+  summarize(
+    across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+  )
+
+# finding the typical user average in each segment. to find it find avg of each user metrics and then avg all with group by cluster
+
+cluster_avg <- user_avg %>% 
+  select(-id) %>% 
   group_by(cluster) %>% 
   summarize(
     across(where(is.numeric), \(x) mean(x, na.rm = TRUE))
   )
 
+cluster_long <- cluster_avg %>% 
+  pivot_longer(cols = -c(cluster),
+               names_to = "metrics",
+               values_to = "average")
 
-cluster_long <- cluster_graph %>%
-  select(-id) %>%
-  pivot_longer(-cluster, names_to = "metric", values_to = "avg")
+clean_labels <- c(
+  total_steps = "Total Steps",
+  calories = "Calories",
+  fairly_active = "Fairly Active (min)",
+  very_active_minutes = " Very Active (min)",
+  moderately_active_distance = "Moderate Active (km)",
+  very_active_distance = "Very Active (km)"
+  
+)
 
-# TODO rough sketch bar plot cluster & change cluster avg total to daily avg, process calender heatmap criterion
+# visual
+ggplot(cluster_long, aes(x = cluster, y = average, fill = factor(cluster))) + geom_col() + facet_wrap(~metrics, scales = "free_y", labeller = labeller(metrics = clean_labels)) + scale_fill_manual(
+  values = c("Consistent High activity" = "#E41A1C", "Inconsistent User" = "#4DAF4A", "Consistent Low activity" = "#377EB8"),
+  name = "Cluster"
+) + theme(axis.text.x = element_blank())
+
+
+# calendar heatmap --------------------------------------------------------
+
+#master_activity_analysis %>% 
+  #filter(very_active_minutes >= 1 ) %>% 
+  #ggplot(aes(x = wday(date, label = TRUE), y = week(date), fill = very_active_minutes)) + geom_tile()
+
+# did not work, pivoting to criterion only and visual on powerBI
+# TODO process criterion and create visual of calendar heatmap png or jpg in powerBI 
