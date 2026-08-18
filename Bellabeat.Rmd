@@ -95,3 +95,122 @@ master_activity_analysis <- master_activity %>%
   )
 ```
 
+## 5.2 Criterion formula
+For the criterion I will use based on the justification on 3.4.1. and is based on each user.
+- cv steps to find the variability of steps to discover user that are consitent
+- exercise frequency based on WHO and justification source [I need to verify WHO part] Moderate / vigorous - very active are only counted as exercise and if it's within total of 20 minutes 
+- zero days ratio to contribute to user behaviour
+- AVG very active also contribute to user behaviour 
+- engagement index is the scoring system each user has based on the sum formula of exercise frequency, zero days ratio, and avg very active. The output would be a number dedicated for each user for later to be used in clustering K-Mean
+
+```{r, formula}
+formula <- master_activity_analysis %>%
+  group_by(id) %>%
+  summarise(
+    n_day = n(),
+    exercise_frequency = sum(very_active_minutes+fairly_active_minutes>20),
+    cv_steps = sd(total_steps) / mean(total_steps) * 100,
+    zero_days_ratio = sum(total_steps == 0) / n(),
+    avg_very_active = mean(very_active_minutes),
+    engagement_index = exercise_frequency + zero_days_ratio + avg_very_active
+  )
+```
+
+## 5.3 K-Mean clustering
+Using K-Mean clustering on formula table to find user segmentation based on their behaviour.
+Scaling the numbers so that it won't skew the result
+```{r, scales}
+data.scale <- formula %>% 
+  select(engagement_index, cv_steps) %>% 
+  scale()
+```
+
+Creating elbow plot to figure out the best center amount. (This is objective since I want to have 3 centers)
+```{r, elbow plot}
+fviz_nbclust(data.scale, kmeans, method = "wss") + labs(subtitle = "Elbow plot")
+```
+
+K mean model output
+```{r, km out}
+km.out <- kmeans(data.scale, centers = 3, nstart = 100)
+print(km.out)
+```
+
+## 5.4 Cluster bar plot
+Creating bar plot to find the average behaviour of certain segment to know more about the behaviour of certai segment.
+First merging each ID belong to what cluster and adding it to master table analysis to create the plot. 
+```{r, cluster bar plot}
+cluster_id <- data.frame(
+  id = unique(formula$id),
+  cluster = km.cluster
+)
+
+master_clustered <- cluster_id %>% 
+  left_join(master_activity_analysis ,by = "id")
+
+user_avg <- master_clustered %>% 
+  group_by(id, cluster) %>% 
+  summarize(
+    across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+  )
+
+# finding the typical user average in each segment. to find it find avg of each user metrics and then avg all with group by cluster
+
+cluster_avg <- user_avg %>% 
+  select(-id) %>% 
+  group_by(cluster) %>% 
+  summarize(
+    across(where(is.numeric), \(x) mean(x, na.rm = TRUE))
+  )
+
+cluster_long <- cluster_avg %>% 
+  pivot_longer(cols = -c(cluster),
+               names_to = "metrics",
+               values_to = "average")
+
+clean_labels <- c(
+  total_steps = "Total Steps",
+  calories = "Calories",
+  fairly_active = "Fairly Active (min)",
+  very_active_minutes = " Very Active (min)",
+  moderately_active_distance = "Moderate Active (km)",
+  very_active_distance = "Very Active (km)"
+  
+)
+
+```
+
+
+
+
+[later]
+K mean visual. Naming labels and creating visual result of k mean
+```{r, km.vis}
+cluster_label <- c(
+  "1" = "Consistent High activity",
+  "2" = "Inconsistent User",
+  "3" = "Consistent Low activity"
+)
+
+km.cluster <- cluster_label[as.character(km.out$cluster)]
+
+# k means visual
+km.cluster <- km.out$cluster
+rownames(data.scale) <- paste(formula$id)
+fviz_cluster(list(data =data.scale, cluster=km.cluster))
+```
+
+Cluster bar plot visual
+```{r, cluster.bar.plot.vis}
+ggplot(cluster_long, aes(x = cluster, y = average, fill = factor(cluster))) + geom_col() + facet_wrap(~metrics, scales = "free_y", labeller = labeller(metrics = clean_labels)) + scale_fill_manual(
+  values = c("Consistent High activity" = "#E41A1C", "Inconsistent User" = "#4DAF4A", "Consistent Low activity" = "#377EB8"),
+  name = "Cluster"
+) + theme(axis.text.x = element_blank())
+```
+
+Calendar heatmap visual
+[png from powerBI main device, add some words]
+
+#TODO 
+- Fix some wording subtitle in graph and other area that lack words
+- add calendar heatmap and wording subtitle
