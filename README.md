@@ -25,6 +25,8 @@ Packages :
 Note : If error make sure all the csv are in the right place (it should be in the right place once i upload this). If heatmap doesnt show, place the image on the same file as RMD
 <br>
 Or just open the technical report / executive report for ready to read pdf
+<br>
+<br>
 
 Limitation:
 - Self selected cohort, all user chose to share data, bias toward already engaged
