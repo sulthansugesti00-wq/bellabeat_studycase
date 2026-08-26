@@ -5,25 +5,22 @@
 
 
 library(tidyverse)
-library(dplyr)
-library(readr)
-library(lubridate)
 library(snakecase)
 library(janitor)
 library(factoextra)
-library (ggplot2)
 
 
 # creating master table ---------------------------------------------------
 
 
 master_activity_raw <- c(
+  
   list.files(path="Fitabase Data 3.12.16-4.11.16", pattern = "dailyActivity", full.names = TRUE),
   list.files(path="Fitabase Data 4.12.16-5.12.16", pattern = "dailyActivity", full.names = TRUE)
 ) %>% 
-lapply(read_csv) %>% 
+  lapply(read_csv) %>% 
   bind_rows()
-  
+
 # dropping this code because cols value from this table is not necessary
 # master_act_engage_raw <- c(
 #  list.files(path="Fitabase Data 3.12.16-4.11.16", pattern = "hourlyIntensities|hourlySteps", full.names = TRUE),
@@ -34,11 +31,11 @@ lapply(read_csv) %>%
 
 # The code below is not needed cause can't find a way to correlate sleep minute with engagement
 # master_engage_raw <- c(
-  # list.files(path="Fitabase Data 3.12.16-4.11.16", pattern = "minuteSleep", full.names = TRUE),
+# list.files(path="Fitabase Data 3.12.16-4.11.16", pattern = "minuteSleep", full.names = TRUE),
 # list.files(path="Fitabase Data 4.12.16-5.12.16", pattern = "minuteSleep", full.names = TRUE)
 # ) %>%
-  # lapply(read_csv) %>%
-  # bind_rows()
+# lapply(read_csv) %>%
+# bind_rows()
 
 # cleaning activity and engage----------------------------------------------------------------
 
@@ -55,7 +52,7 @@ lapply(read_csv) %>%
 #  ) %>% 
 #clean_names() %>% 
 #  distinct()
-  
+
 ### Easily find NA's (NA's will be ignored)
 #summary(master_act_engage)
 
@@ -98,10 +95,10 @@ n_distinct(master_activity$id)
 
 # Dropped due to intensity cols NAs are 46k+ and total intensity of 180 has n0 meaning
 # master_act_engage_analysis <- master_act_engage %>% 
-  #select(
-    #id, date, time,
-    #weekday, total_intensity
-  #)
+#select(
+#id, date, time,
+#weekday, total_intensity
+#)
 
 
 master_activity_analysis <- master_activity %>%
@@ -209,8 +206,8 @@ ggplot(cluster_long, aes(x = cluster, y = average, fill = factor(cluster))) + ge
 # calendar heatmap --------------------------------------------------------
 
 #master_activity_analysis %>% 
-  #filter(very_active_minutes >= 1 ) %>% 
-  #ggplot(aes(x = wday(date, label = TRUE), y = week(date), fill = very_active_minutes)) + geom_tile()
+#filter(very_active_minutes >= 1 ) %>% 
+#ggplot(aes(x = wday(date, label = TRUE), y = week(date), fill = very_active_minutes)) + geom_tile()
 
 # did not work, pivoting to criterion only and visual on powerBI
 # TODO process criterion and create visual of calendar heatmap png or jpg in powerBI 
