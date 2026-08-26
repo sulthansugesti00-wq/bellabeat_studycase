@@ -18,6 +18,13 @@ Packages :
 - factoextra
 <br>
 
+## How to run
+1. Clone or download the repo
+2. Open RMD (Make sure install.packages dependencies)
+3. Run everything
+Note : If error make sure all the csv are in the right place (it should be in the right place once i upload this). If heatmap doesnt show, place the image on the same file as RMD
+Or just open the technical report / executive report for ready to read pdf
+
 Limitation:
 - Self selected cohort, all user chose to share data, bias toward already engaged
 - tiny sample of 35 users
